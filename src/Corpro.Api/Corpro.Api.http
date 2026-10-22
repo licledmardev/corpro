@@ -1,0 +1,38 @@
+@api = http://localhost:5172
+# Reemplace por un suministro y una dirección que existan en su base local (no versione datos reales)
+@suministro = 10000001
+@direccion = retamas
+
+### Salud
+GET {{api}}/salud
+
+### Consulta exacta por suministro
+GET {{api}}/api/cortes/consultar/{{suministro}}
+
+### Consulta parcial por dirección (espacios → %20)
+GET {{api}}/api/cortes/consultar/{{direccion}}
+
+### Avisos vigentes (con imagen)
+GET {{api}}/api/cortes/avisos-vigentes
+
+### Criterio inválido (muy corto) → 400
+GET {{api}}/api/cortes/consultar/av
+
+### Actualizar contacto (celular y/o correo)
+POST {{api}}/api/cortes/actualizar-datos
+Content-Type: application/json
+
+{
+  "suministro": "99999999",
+  "celular": "987654321",
+  "correo": "vecino@example.com"
+}
+
+### Datos inválidos → 400 con errores por campo
+POST {{api}}/api/cortes/actualizar-datos
+Content-Type: application/json
+
+{
+  "suministro": "ABC",
+  "celular": "123"
+}

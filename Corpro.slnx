@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Corpro.Api/Corpro.Api.csproj" />
+    <Project Path="src/Corpro.Aplicacion/Corpro.Aplicacion.csproj" />
+    <Project Path="src/Corpro.Contratos/Corpro.Contratos.csproj" />
+    <Project Path="src/Corpro.Dominio/Corpro.Dominio.csproj" />
+    <Project Path="src/Corpro.Infraestructura/Corpro.Infraestructura.csproj" />
+    <Project Path="src/Corpro.Web/Corpro.Web.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Corpro.Importador/Corpro.Importador.csproj" />
+  </Folder>
+</Solution>

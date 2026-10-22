@@ -1,0 +1,59 @@
+@* Íconos SVG en línea (sin fuentes externas). Heredan el color del texto. *@
+<svg xmlns="http://www.w3.org/2000/svg" width="@Tamano" height="@Tamano" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false" class="@Clase">
+    @switch (Nombre)
+    {
+        case "rayo":
+            <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />
+            break;
+        case "buscar":
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+            break;
+        case "calendario":
+            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+            break;
+        case "reloj":
+            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+            break;
+        case "alerta":
+            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" />
+            break;
+        case "check":
+            <circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" />
+            break;
+        case "info":
+            <circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" />
+            break;
+        case "ayuda":
+            <circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4M12 17h.01" />
+            break;
+        case "celular":
+            <rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" />
+            break;
+        case "correo":
+            <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+            break;
+        case "campana":
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+            break;
+        case "documento":
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h5" />
+            break;
+        case "descargar":
+            <path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16" />
+            break;
+        case "ubicacion":
+            <path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z" /><circle cx="12" cy="9" r="2.5" />
+            break;
+        case "cerrar":
+            <path d="M18 6 6 18M6 6l12 12" />
+            break;
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Nombre { get; set; } = "";
+    [Parameter] public int Tamano { get; set; } = 20;
+    [Parameter] public string? Clase { get; set; }
+}

@@ -1,0 +1,30 @@
+# Blueprint de Render: New → Blueprint → elegir este repositorio.
+# Los valores con "sync: false" los pide Render al crear el servicio (no se guardan en el repo).
+services:
+  - type: web
+    name: corpro-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /salud
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - src/Corpro.Api/**
+        - src/Corpro.Aplicacion/**
+        - src/Corpro.Contratos/**
+        - src/Corpro.Dominio/**
+        - src/Corpro.Infraestructura/**
+        - Dockerfile
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: BaseDatos__ConexionActiva
+        value: Neon
+      - key: Proxy__ConfiarEnEncabezadosReenviados
+        value: "true"
+      - key: ConnectionStrings__Neon
+        sync: false
+      - key: Cors__OrigenesPermitidos__0
+        sync: false

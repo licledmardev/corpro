@@ -1,0 +1,136 @@
+@* Panel lateral con el próximo aviso oficial y, si hay, los siguientes. La imagen se amplía en modal. *@
+@inject CortesApiCliente Api
+
+<aside class="card panel-aviso" aria-labelledby="titulo-panel-aviso">
+    <div class="card-header panel-aviso-cabecera">
+        <span class="panel-aviso-etiqueta"><Icono Nombre="campana" Tamano="14" /> Aviso oficial</span>
+        <h2 id="titulo-panel-aviso" class="h6 mb-0 mt-1">
+            @(avisos.Count > 1 ? "Próximos cortes programados" : "Próximo corte programado")
+        </h2>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="placeholder-glow" aria-busy="true" aria-label="Cargando aviso">
+            <div class="placeholder w-100 panel-aviso-miniatura-alto"></div>
+            <div class="card-body">
+                <span class="placeholder col-8 mb-2"></span>
+                <span class="placeholder col-6"></span>
+            </div>
+        </div>
+    }
+    else if (error is not null)
+    {
+        <div class="card-body small d-flex gap-2 align-items-start text-body-secondary">
+            <Icono Nombre="info" Clase="flex-shrink-0 mt-1" /> <span>@error</span>
+        </div>
+    }
+    else if (avisos.Count == 0)
+    {
+        <div class="card-body d-flex gap-2 align-items-start">
+            <Icono Nombre="check" Clase="flex-shrink-0 mt-1 text-success" />
+            <span>No hay cortes programados por el momento.</span>
+        </div>
+    }
+    else
+    {
+        var principal = avisos[0];
+        var imagen = UrlSegura.Normalizar(principal.ImagenAviso);
+
+        @if (imagen is not null)
+        {
+            <button type="button" class="panel-aviso-miniatura" @onclick="() => Abrir(principal, imagen)"
+                    aria-label="Ampliar el aviso oficial del @Formato.FechaLarga(principal.FechaCorte, mayuscula: false)">
+                <img src="@imagen" alt="" loading="lazy" />
+                <span class="panel-aviso-ampliar"><Icono Nombre="buscar" Tamano="16" /> Ampliar</span>
+            </button>
+        }
+
+        <div class="card-body">
+            <div class="d-flex gap-3 align-items-center mb-2">
+                <div class="etiqueta-fecha" aria-hidden="true">
+                    <span class="dia">@Formato.Dia(principal.FechaCorte)</span>
+                    <span class="mes">@Formato.MesCorto(principal.FechaCorte)</span>
+                </div>
+                <div>
+                    <p class="fw-semibold mb-0 titulo-fecha">@Formato.FechaLarga(principal.FechaCorte)</p>
+                    <span class="small text-body-secondary d-inline-flex align-items-center gap-1">
+                        <Icono Nombre="reloj" Tamano="14" /> De @Formato.Horario(principal.HoraInicio, principal.HoraFin)
+                    </span>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(principal.SectoresAfectados))
+            {
+                <p class="small text-body-secondary mb-3">
+                    <strong class="text-body">Sectores:</strong> @Recortar(principal.SectoresAfectados, 150)
+                </p>
+            }
+
+            @if (imagen is not null)
+            {
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1"
+                        @onclick="() => Abrir(principal, imagen)">
+                    <Icono Nombre="documento" Tamano="16" /> Ver aviso completo
+                </button>
+            }
+        </div>
+
+        @if (avisos.Count > 1)
+        {
+            <ul class="list-group list-group-flush">
+                @foreach (var aviso in avisos.Skip(1))
+                {
+                    var img = UrlSegura.Normalizar(aviso.ImagenAviso);
+                    <li class="list-group-item d-flex justify-content-between align-items-center gap-2 small">
+                        <span>
+                            <strong>@Formato.FechaLarga(aviso.FechaCorte)</strong><br />
+                            <span class="text-body-secondary">De @Formato.Horario(aviso.HoraInicio, aviso.HoraFin)</span>
+                        </span>
+                        @if (img is not null)
+                        {
+                            <button type="button" class="btn btn-link btn-sm p-0 text-nowrap" @onclick="() => Abrir(aviso, img)">Ver aviso</button>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    }
+</aside>
+
+@code {
+    [Parameter] public EventCallback<AvisoSeleccionado> OnVerAviso { get; set; }
+
+    private IReadOnlyList<AvisoVigenteDto> avisos = [];
+    private bool cargando = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var r = await Api.AvisosVigentesAsync();
+            if (r.EsExitosa) avisos = r.Valor ?? [];
+            else error = "No pudimos cargar los avisos en este momento.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            error = "No pudimos cargar los avisos. Verifique su conexión.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private Task Abrir(AvisoVigenteDto aviso, string imagen) =>
+        OnVerAviso.InvokeAsync(new AvisoSeleccionado(
+            $"Aviso de corte del {Formato.FechaLarga(aviso.FechaCorte, mayuscula: false)}", imagen));
+
+    private static string Recortar(string texto, int max)
+    {
+        if (texto.Length <= max) return texto;
+        var corte = texto.LastIndexOf(' ', max);
+        return texto[..(corte > 0 ? corte : max)] + "…";
+    }
+}

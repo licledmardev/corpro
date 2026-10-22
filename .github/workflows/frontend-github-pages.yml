@@ -1,0 +1,66 @@
+# Publica Corpro.Web (Blazor WebAssembly) en GitHub Pages.
+# Requisito: Settings → Pages → Source = "GitHub Actions".
+# Opcional: variable de repositorio API_BASE_URL con la URL pública de la API.
+name: Frontend → GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ "src/Corpro.Web/**", "src/Corpro.Contratos/**", ".github/workflows/frontend-github-pages.yml" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publicar Blazor WASM
+        run: dotnet publish src/Corpro.Web/Corpro.Web.csproj -c Release -o publicado
+
+      - name: Ajustar para GitHub Pages
+        working-directory: publicado/wwwroot
+        run: |
+          # El sitio vive en https://<usuario>.github.io/<repositorio>/
+          # (si el repositorio se llama <usuario>.github.io, vive en la raíz)
+          REPO="${GITHUB_REPOSITORY#*/}"
+          if [[ "$REPO" != *.github.io ]]; then
+            sed -i "s|<base href=\"/\" />|<base href=\"/${REPO}/\" />|" index.html
+          fi
+          # URL de la API: solo cambia ApiBaseUrl y conserva el resto (sección Portal)
+          if [ -n "${{ vars.API_BASE_URL }}" ]; then
+            jq --arg url "${{ vars.API_BASE_URL }}" '.ApiBaseUrl = $url' appsettings.json > appsettings.tmp
+            mv appsettings.tmp appsettings.json
+          fi
+          # Copias comprimidas que quedarían desactualizadas tras editar los archivos
+          rm -f appsettings.Development.json* appsettings.json.br appsettings.json.gz index.html.br index.html.gz
+          # Rutas profundas de la SPA y archivos con "_" (_framework)
+          cp index.html 404.html
+          touch .nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publicado/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,66 @@
+﻿@inherits LayoutComponentBase
+@inject PortalOpciones Portal
+
+<a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 btn btn-primary" href="#contenido">Saltar al contenido</a>
+
+<div class="barra-grupo">
+    <div class="container py-1 d-flex justify-content-between">
+        <span>@Portal.Grupo</span>
+        @if (Portal.SitioWeb is not null)
+        {
+            <a class="text-white text-decoration-none" href="@Portal.SitioWeb" target="_blank" rel="noopener">Ir al sitio web</a>
+        }
+    </div>
+</div>
+
+<header class="cabecera">
+    <div class="container py-3 d-flex align-items-center justify-content-between gap-3">
+        <a class="marca d-flex align-items-center gap-2" href="">
+            @if (Portal.LogoUrl is not null)
+            {
+                <img class="marca-logo" src="@Portal.LogoUrl" alt="@Portal.Empresa" width="205" height="43" />
+                <span class="marca-separador d-none d-sm-block" aria-hidden="true"></span>
+                <span class="marca-portal d-none d-sm-block">Avisos de cortes<br />programados</span>
+            }
+            else
+            {
+                <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+                    <rect width="42" height="42" rx="10" fill="#0072CE" />
+                    <path d="M0 42 42 0v32a10 10 0 0 1-10 10z" fill="#2EA937" />
+                    <path d="M23 7 12 23h8l-2 12 12-17h-8l1-11z" fill="#fff" />
+                </svg>
+                <span>
+                    <span class="marca-nombre d-block">@Portal.Empresa</span>
+                    <span class="marca-sub">Avisos de cortes programados</span>
+                </span>
+            }
+        </a>
+        @if (Portal.CentroAtencion is not null)
+        {
+            <span class="small text-end d-none d-md-block" style="color: var(--distriluz-azul-oscuro)">
+                <span class="d-block text-body-secondary">Emergencias</span>
+                <strong>@Portal.CentroAtencion</strong>
+            </span>
+        }
+    </div>
+</header>
+
+<main id="contenido" tabindex="-1">
+    @Body
+</main>
+
+<footer class="footer mt-auto">
+    <div class="container py-2">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-7">
+                <strong>@Portal.Empresa</strong> · @Portal.Grupo
+                <div class="small texto-suave">
+                    La información de esta página proviene de los avisos oficiales de cortes programados.
+                </div>
+            </div>
+            <div class="col-12 col-md-5 text-md-end small texto-suave">
+                © @DateTime.Now.Year @Portal.Empresa. Todos los derechos reservados.
+            </div>
+        </div>
+    </div>
+</footer>

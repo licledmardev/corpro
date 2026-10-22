@@ -1,0 +1,59 @@
+@* Modal accesible controlado desde Blazor (no requiere bootstrap.bundle.js).
+   Se cierra con la X, con Escape o haciendo clic fuera del cuadro. *@
+@if (Visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="@idTitulo"
+         @ref="contenedor" @onclick="CerrarAsync" @onkeydown="TeclaAsync">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable @ClaseTamano" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="@idTitulo">@Titulo</h2>
+                    <button type="button" class="btn-close" aria-label="Cerrar" @onclick="CerrarAsync"></button>
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                @if (Pie is not null)
+                {
+                    <div class="modal-footer">@Pie</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string idTitulo = $"modal-{Guid.NewGuid():N}";
+    private ElementReference contenedor;
+    private bool enfocar;
+
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public string Tamano { get; set; } = "lg"; // sm | lg | xl
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Pie { get; set; }
+    [Parameter] public EventCallback OnCerrar { get; set; }
+
+    private string ClaseTamano => $"modal-{Tamano}";
+
+    private bool visibleAnterior;
+
+    protected override void OnParametersSet()
+    {
+        if (Visible && !visibleAnterior) enfocar = true;
+        visibleAnterior = Visible;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (enfocar && Visible)
+        {
+            enfocar = false;
+            await contenedor.FocusAsync(); // para que Escape funcione y el lector de pantalla lo anuncie
+        }
+    }
+
+    private Task CerrarAsync() => OnCerrar.InvokeAsync();
+
+    private Task TeclaAsync(KeyboardEventArgs e) => e.Key == "Escape" ? CerrarAsync() : Task.CompletedTask;
+}

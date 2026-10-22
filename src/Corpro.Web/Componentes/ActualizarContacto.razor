@@ -1,0 +1,164 @@
+@* Bloque opcional para que el cliente deje su celular y/o correo. *@
+@inject CortesApiCliente Api
+
+<div class="card bloque-contacto">
+    <div class="card-body p-4 p-lg-5">
+        <div class="row g-4 align-items-center">
+            <div class="col-12 col-lg-5">
+                <div class="d-sm-flex gap-3 align-items-start">
+                    <span class="icono-circulo mb-3 mb-sm-0"><Icono Nombre="campana" Tamano="24" /></span>
+                    <div>
+                        <span class="badge rounded-pill badge-opcional mb-2">Opcional</span>
+                        <h2 id="titulo-contacto" class="h4 titulo-seccion mb-3">Le avisamos antes de cada corte</h2>
+                        <p class="mb-2">
+                            Déjenos su celular o correo y le enviaremos los avisos de cortes programados en su zona,
+                            para que pueda organizarse con anticipación.
+                        </p>
+                        <p class="small text-body-secondary mb-0">
+                            Si cambió de número o de correo, actualícelo aquí: así nos aseguramos de que nuestros
+                            avisos le lleguen a usted.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-7">
+                @if (registro is not null)
+                {
+                    <div class="alert resultado-ok p-4 mb-0" role="status">
+                        <h3 class="h5 d-flex align-items-center gap-2 mb-2"><Icono Nombre="check" /> ¡Gracias! Datos recibidos</h3>
+                        <p class="mb-2">Le avisaremos oportunamente sobre los cortes programados de su suministro.</p>
+                        <button type="button" class="btn btn-link p-0" @onclick="Reiniciar">Registrar otro suministro</button>
+                    </div>
+                }
+                else
+                {
+                    <EditForm EditContext="contexto" OnValidSubmit="EnviarAsync" FormName="contacto">
+                        <DataAnnotationsValidator />
+
+                        @if (mensaje is not null)
+                        {
+                            <div class="alert alert-warning py-2 small" role="alert">@mensaje</div>
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="ct-suministro" class="form-label">N.° de suministro</label>
+                                <InputText id="ct-suministro" class="form-control" @bind-Value="modelo.Suministro"
+                                           inputmode="numeric" maxlength="20" autocomplete="off" placeholder="Ej. 12345678" />
+                                <ValidationMessage For="() => modelo.Suministro" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="ct-celular" class="form-label">Celular</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><Icono Nombre="celular" Tamano="18" /></span>
+                                    <InputText id="ct-celular" type="tel" class="form-control" @bind-Value="modelo.Celular"
+                                               inputmode="tel" maxlength="15" autocomplete="tel" placeholder="987 654 321" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Celular" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="ct-correo" class="form-label">Correo electrónico</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><Icono Nombre="correo" Tamano="18" /></span>
+                                    <InputText id="ct-correo" type="email" class="form-control" @bind-Value="modelo.Correo"
+                                               maxlength="150" autocomplete="email" placeholder="nombre@correo.com" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Correo" />
+                            </div>
+                            <div class="col-12">
+                                <p class="form-text mt-0">Puede dejar su celular, su correo o ambos.</p>
+                                <button type="submit" class="btn btn-success px-4" disabled="@enviando">
+                                    @if (enviando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                    }
+                                    Quiero recibir avisos
+                                </button>
+                                <p class="small text-body-secondary mt-3 mb-0">
+                                    Usaremos estos datos solo para comunicarnos con usted sobre su servicio.
+                                </p>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Suministro consultado en el buscador, para ahorrarle escribirlo de nuevo.</summary>
+    [Parameter] public string? SuministroSugerido { get; set; }
+
+    private ActualizacionContactoSolicitud modelo = new();
+    private EditContext contexto = default!;
+    private ValidationMessageStore erroresServidor = default!;
+    private bool enviando;
+    private string? mensaje;
+    private ActualizacionContactoRespuesta? registro;
+
+    protected override void OnInitialized() => Preparar();
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(SuministroSugerido) && string.IsNullOrEmpty(modelo.Suministro))
+            modelo.Suministro = SuministroSugerido;
+    }
+
+    private async Task EnviarAsync()
+    {
+        mensaje = null;
+        erroresServidor.Clear();
+
+        if (string.IsNullOrWhiteSpace(modelo.Celular) && string.IsNullOrWhiteSpace(modelo.Correo))
+        {
+            mensaje = "Ingrese su celular, su correo o ambos.";
+            return;
+        }
+
+        enviando = true;
+        try
+        {
+            var r = await Api.ActualizarContactoAsync(modelo);
+            if (r.EsExitosa)
+            {
+                registro = r.Valor;
+                return;
+            }
+
+            mensaje = r.Mensaje;
+            // Errores del servidor junto al campo correspondiente.
+            foreach (var (campo, textos) in r.Errores ?? new Dictionary<string, string[]>())
+            {
+                if (typeof(ActualizacionContactoSolicitud).GetProperty(campo) is not null)
+                    erroresServidor.Add(contexto.Field(campo), textos);
+                else
+                    mensaje = string.Join(" ", textos);
+            }
+            contexto.NotifyValidationStateChanged();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            mensaje = "No se pudo conectar con el servicio. Intente de nuevo en unos minutos.";
+        }
+        finally
+        {
+            enviando = false;
+        }
+    }
+
+    private void Reiniciar()
+    {
+        registro = null;
+        modelo = new();
+        Preparar();
+    }
+
+    private void Preparar()
+    {
+        contexto = new EditContext(modelo);
+        erroresServidor = new ValidationMessageStore(contexto);
+        contexto.OnFieldChanged += (_, e) => erroresServidor.Clear(e.FieldIdentifier);
+    }
+}

@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/publicado/
+.git/
+.github/
+.vs/
+.vscode/
+.claude/
+.agents/
+db/
+tools/
+src/Corpro.Web/
+*.md
+*.xlsx
+*.xls
+*.csv
+*.pdf

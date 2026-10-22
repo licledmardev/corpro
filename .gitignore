@@ -1,0 +1,15 @@
+bin/
+obj/
+publicado/
+.vs/
+*.user
+
+# Datos reales de clientes: NUNCA al repositorio (el repo de GitHub Pages suele ser público)
+*.xlsx
+*.xls
+*.csv
+*.pdf
+
+# Secretos locales
+appsettings.*.local.json
+.env

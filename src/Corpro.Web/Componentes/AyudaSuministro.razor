@@ -1,0 +1,50 @@
+@* Contenido del modal "¿Dónde encuentro mi número de suministro?" *@
+<p class="mb-4">
+    Su <strong>número de suministro</strong> identifica su conexión eléctrica y solo tiene números.
+    Lo encuentra en su recibo de luz o en su caja portamedidor.
+</p>
+
+<div class="row g-4">
+    @* Ilustración del recibo con la disposición real de sus elementos *@
+    <div class="col-12 col-md-5">
+        <figure class="figura-ayuda mb-0">
+            <img src="img/ayuda-recibo.svg" width="520" height="720"
+                 alt="Recibo de luz. El número de suministro está resaltado en la parte superior izquierda, junto al texto 'Para consultas, su código'." />
+            <figcaption class="mt-2 text-center small">Recibo de referencia</figcaption>
+        </figure>
+    </div>
+
+    <div class="col-12 col-md-7">
+        <h3 class="h5 titulo-seccion mb-3">En su recibo de luz</h3>
+        <div class="d-flex gap-3 align-items-start mb-4">
+            <span class="paso-numero paso-verde" aria-hidden="true">1</span>
+            <div>
+                <strong class="d-block">Parte superior izquierda del recibo</strong>
+                Es el número grande que aparece junto al texto <em>“Para consultas, su código”</em>,
+                debajo del número de recibo y encima de su nombre.
+            </div>
+        </div>
+
+        <h3 class="h5 titulo-seccion mb-3">En su caja portamedidor</h3>
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-sm-6">
+                <img class="w-100 h-auto rounded border" src="img/ayuda-caja-portamedidor.svg" width="640" height="420"
+                     alt="Caja portamedidor con el número de suministro pintado en la tapa" loading="lazy" />
+            </div>
+            <div class="col-12 col-sm-6">
+                <div class="d-flex gap-3 align-items-start">
+                    <span class="paso-numero" aria-hidden="true">2</span>
+                    <div>
+                        Está <strong>pintado o en una etiqueta</strong> sobre la tapa de la caja donde se encuentra
+                        su medidor de luz.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert resultado-info mt-4 mb-0 d-flex gap-2 align-items-start small">
+            <Icono Nombre="info" Clase="flex-shrink-0 mt-1" />
+            <span>¿No lo encuentra? También puede buscar por la <strong>dirección</strong> de su vivienda o negocio.</span>
+        </div>
+    </div>
+</div>

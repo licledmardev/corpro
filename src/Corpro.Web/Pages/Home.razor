@@ -1,0 +1,166 @@
+﻿@page "/"
+@inject CortesApiCliente Api
+@inject PortalOpciones Portal
+
+<PageTitle>Cortes programados · @Portal.Empresa</PageTitle>
+
+@* ===================== 1. Buscador ===================== *@
+<section class="hero" aria-labelledby="titulo-busqueda">
+    <div class="container py-5">
+        <div class="row g-4 g-xl-5 align-items-start">
+            @* Columna principal: la tarea del usuario (buscar) *@
+            <div class="col-12 col-lg-7 col-xl-8">
+                <h1 id="titulo-busqueda" class="display-6 mb-2">¿Tendrá corte de luz?</h1>
+                <p class="lead mb-4">
+                    Consulte con su número de suministro o su dirección si su servicio será interrumpido
+                    por trabajos programados.
+                </p>
+                <div class="tarjeta-busqueda p-4">
+                    <form @onsubmit="BuscarAsync" @onsubmit:preventDefault role="search">
+                        <label for="criterio" class="form-label">N.° de suministro o dirección</label>
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <input id="criterio" class="form-control form-control-lg" @bind="criterio"
+                                   placeholder="Ej. 12345678 o Jr. Lima" maxlength="100"
+                                   autocomplete="off" aria-describedby="ayuda-criterio" />
+                            <button type="submit" class="btn btn-primary btn-lg px-4 d-inline-flex align-items-center justify-content-center gap-2" disabled="@buscando">
+                                @if (buscando)
+                                {
+                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                    <span>Buscando…</span>
+                                }
+                                else
+                                {
+                                    <Icono Nombre="buscar" />
+                                    <span>Consultar</span>
+                                }
+                            </button>
+                        </div>
+                        <div id="ayuda-criterio" class="d-flex flex-wrap justify-content-between gap-2 mt-2">
+                            <span class="form-text mt-0">Para dirección, escriba al menos 4 caracteres.</span>
+                            <button type="button" class="enlace-ayuda d-inline-flex align-items-center gap-1" @onclick="() => ayudaVisible = true">
+                                <Icono Nombre="ayuda" Tamano="16" /> ¿Dónde encuentro mi número de suministro?
+                            </button>
+                        </div>
+                    </form>
+
+                    <div aria-live="polite" class="mt-3">
+                        @if (buscando && lento)
+                        {
+                            <div class="alert resultado-info d-flex gap-2 align-items-start small mb-0" role="status">
+                                <span class="spinner-border spinner-border-sm mt-1 flex-shrink-0" aria-hidden="true"></span>
+                                <span>Estamos activando el servicio. La primera consulta puede tardar hasta un minuto; gracias por esperar.</span>
+                            </div>
+                        }
+                        else if (errorBusqueda is not null)
+                        {
+                            <div class="alert resultado-info d-flex gap-2 align-items-start mb-0" role="alert">
+                                <Icono Nombre="info" Clase="flex-shrink-0 mt-1" /> <span>@errorBusqueda</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <ResultadoConsulta Resultado="resultado" OnVerAviso="VerAviso" />
+                        }
+                    </div>
+                </div>
+
+                <ul class="list-unstyled d-flex flex-wrap gap-3 gap-md-4 mt-4 mb-0 confianza">
+                    <li class="d-inline-flex align-items-center gap-2"><Icono Nombre="check" Tamano="18" /> Información de los avisos oficiales</li>
+                    <li class="d-inline-flex align-items-center gap-2"><Icono Nombre="check" Tamano="18" /> Consulta gratuita y sin registro</li>
+                </ul>
+            </div>
+
+            @* Columna de apoyo: aviso oficial vigente (en móvil baja debajo del buscador) *@
+            <div class="col-12 col-lg-5 col-xl-4">
+                <div class="panel-aviso-contenedor">
+                    <AvisosVigentes OnVerAviso="VerAviso" />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ===================== 2. Datos de contacto (opcional) ===================== *@
+<section id="contacto" class="seccion seccion-gris" aria-labelledby="titulo-contacto">
+    <div class="container">
+        <ActualizarContacto SuministroSugerido="@suministroConsultado" />
+    </div>
+</section>
+
+@* ===================== Modales ===================== *@
+<Modal Visible="ayudaVisible" Titulo="¿Dónde encuentro mi número de suministro?" Tamano="xl" OnCerrar="() => ayudaVisible = false">
+    <AyudaSuministro />
+</Modal>
+
+<Modal Visible="avisoAbierto is not null" Titulo="@(avisoAbierto?.Titulo ?? "")" Tamano="lg" OnCerrar="() => avisoAbierto = null">
+    <ChildContent>
+        @if (avisoAbierto is not null)
+        {
+            <img class="imagen-aviso-completa" src="@avisoAbierto.UrlImagen" alt="@avisoAbierto.Titulo" />
+        }
+    </ChildContent>
+    <Pie>
+        @if (avisoAbierto is not null)
+        {
+            <a class="btn btn-outline-primary d-inline-flex align-items-center gap-1" href="@avisoAbierto.UrlImagen" download>
+                <Icono Nombre="descargar" Tamano="18" /> Descargar aviso
+            </a>
+        }
+        <button type="button" class="btn btn-primary" @onclick="() => avisoAbierto = null">Cerrar</button>
+    </Pie>
+</Modal>
+
+@code {
+    private string criterio = string.Empty;
+    private bool buscando;
+    private bool lento;
+    private string? errorBusqueda;
+    private ConsultaCortesRespuesta? resultado;
+    private string? suministroConsultado;
+
+    private bool ayudaVisible;
+    private AvisoSeleccionado? avisoAbierto;
+
+    private async Task BuscarAsync()
+    {
+        if (buscando) return;
+        buscando = true;
+        lento = false;
+        errorBusqueda = null;
+        resultado = null;
+
+        // Si la API tarda (arranque en frío), se avisa al usuario en vez de dejarlo sin respuesta.
+        using var aviso = new CancellationTokenSource();
+        _ = Task.Delay(4000, aviso.Token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled && buscando) { lento = true; InvokeAsync(StateHasChanged); }
+        }, TaskScheduler.Default);
+
+        try
+        {
+            var r = await Api.ConsultarAsync(criterio);
+            if (r.EsExitosa)
+            {
+                resultado = r.Valor;
+                if (resultado!.BusquedaPorSuministro)
+                    suministroConsultado = resultado.Criterio;
+            }
+            else
+            {
+                errorBusqueda = r.Errores?.Values.SelectMany(e => e).FirstOrDefault() ?? r.Mensaje;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            errorBusqueda = "No se pudo conectar con el servicio. Verifique su conexión e intente de nuevo.";
+        }
+        finally
+        {
+            aviso.Cancel();
+            buscando = false;
+            lento = false;
+        }
+    }
+
+    private void VerAviso(AvisoSeleccionado aviso) => avisoAbierto = aviso;
+}

@@ -1,0 +1,90 @@
+@* Resultado de la búsqueda: alerta de corte (agrupada por aviso) o mensaje de tranquilidad. *@
+@if (Resultado is { Afectado: true })
+{
+    @foreach (var grupo in Resultado.Cortes.GroupBy(c => c.NroInterrupcion))
+    {
+        var aviso = grupo.First();
+        var imagen = UrlSegura.Normalizar(aviso.ImagenAviso);
+
+        <div class="alert resultado-corte p-3 p-md-4 mb-3" role="alert">
+            <div class="d-flex gap-3 align-items-start">
+                <div class="etiqueta-fecha flex-shrink-0" aria-hidden="true">
+                    <span class="dia">@Formato.Dia(aviso.FechaCorte)</span>
+                    <span class="mes">@Formato.MesCorto(aviso.FechaCorte)</span>
+                </div>
+                <div class="flex-grow-1">
+                    <h3 class="h5 mb-1 d-flex align-items-center gap-2">
+                        <Icono Nombre="alerta" />
+                        @(Resultado.BusquedaPorSuministro ? "Su suministro tiene un corte programado" : "Hay cortes programados en esta dirección")
+                    </h3>
+                    <p class="mb-2">Corte de @Formato.Servicio(aviso.TipoServicio)</p>
+
+                    <div class="d-flex flex-wrap gap-3 mb-2 horario">
+                        <span class="d-inline-flex align-items-center gap-1 fw-semibold">
+                            <Icono Nombre="calendario" Tamano="18" /> @Formato.FechaLarga(aviso.FechaCorte)
+                        </span>
+                        <span class="d-inline-flex align-items-center gap-1 fw-semibold">
+                            <Icono Nombre="reloj" Tamano="18" /> De @Formato.Horario(aviso.HoraInicio, aviso.HoraFin)
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(aviso.Motivo))
+                    {
+                        <p class="small mb-2">@aviso.Motivo</p>
+                    }
+
+                    <ul class="list-unstyled small mb-0">
+                        @foreach (var c in grupo)
+                        {
+                            <li class="d-flex gap-2 align-items-start">
+                                <Icono Nombre="ubicacion" Tamano="16" Clase="mt-1 flex-shrink-0" />
+                                <span><span class="font-monospace fw-semibold">@c.Suministro</span> · @c.Direccion</span>
+                            </li>
+                        }
+                    </ul>
+
+                    @if (imagen is not null)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-3 d-inline-flex align-items-center gap-1 bg-white"
+                                @onclick="() => VerAvisoAsync(aviso, imagen)">
+                            <Icono Nombre="documento" Tamano="16" /> Ver aviso oficial
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Resultado.HayMasResultados)
+    {
+        <p class="small text-body-secondary">Hay más coincidencias. Precise la dirección o busque por número de suministro.</p>
+    }
+}
+else if (Resultado is not null)
+{
+    <div class="alert resultado-ok p-3 d-flex gap-2 align-items-start mb-3" role="status">
+        <Icono Nombre="check" Clase="flex-shrink-0 mt-1" />
+        <span>
+            @(Resultado.BusquedaPorSuministro
+                ? $"El suministro {Resultado.Criterio} no tiene cortes programados por ahora."
+                : $"No hay cortes programados para direcciones que coincidan con “{Resultado.Criterio}”.")
+        </span>
+    </div>
+}
+
+@if (Resultado is not null)
+{
+    @* Invitación sutil (opcional) a dejar sus datos de contacto *@
+    <p class="small mb-0 d-flex align-items-center gap-2">
+        <Icono Nombre="campana" Tamano="16" Clase="text-success" />
+        <span>¿Quiere que le avisemos antes del próximo corte? <a href="#contacto">Déjenos su celular o correo</a>.</span>
+    </p>
+}
+
+@code {
+    [Parameter] public ConsultaCortesRespuesta? Resultado { get; set; }
+    [Parameter] public EventCallback<AvisoSeleccionado> OnVerAviso { get; set; }
+
+    private Task VerAvisoAsync(CorteProgramadoDto aviso, string imagen) =>
+        OnVerAviso.InvokeAsync(new AvisoSeleccionado($"Aviso de corte del {Formato.FechaLarga(aviso.FechaCorte, mayuscula: false)}", imagen));
+}

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "corpro-api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Corpro.Api", "--launch-profile", "http"],
+      "port": 5172
+    },
+    {
+      "name": "corpro-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Corpro.Web", "--launch-profile", "http"],
+      "port": 5032
+    }
+  ]
+}
