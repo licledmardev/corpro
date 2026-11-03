@@ -97,13 +97,30 @@
     private bool enviando;
     private string? mensaje;
     private ActualizacionContactoRespuesta? registro;
+    private string? sugerenciaAplicada;
 
     protected override void OnInitialized() => Preparar();
 
+    // Cada vez que se consulta un suministro distinto, el formulario pasa a ese suministro.
     protected override void OnParametersSet()
     {
-        if (!string.IsNullOrEmpty(SuministroSugerido) && string.IsNullOrEmpty(modelo.Suministro))
-            modelo.Suministro = SuministroSugerido;
+        if (string.IsNullOrEmpty(SuministroSugerido) || SuministroSugerido == sugerenciaAplicada)
+            return;
+
+        sugerenciaAplicada = SuministroSugerido;
+
+        // Si ya registró el suministro anterior, se vuelve a mostrar el formulario para el nuevo.
+        if (registro is not null)
+        {
+            registro = null;
+            mensaje = null;
+            modelo = new();
+            Preparar();
+        }
+
+        modelo.Suministro = SuministroSugerido;
+        erroresServidor.Clear(contexto.Field(nameof(modelo.Suministro)));
+        contexto.NotifyValidationStateChanged();
     }
 
     private async Task EnviarAsync()
