@@ -142,13 +142,19 @@ static List<FilaExcel> LeerExcel(string ruta)
 {
     using var libro = new XLWorkbook(ruta);
     var hoja = libro.Worksheet(1);
-    var encabezado = hoja.Row(1).CellsUsed().ToDictionary(c => c.GetString().Trim(), c => c.Address.ColumnNumber, StringComparer.OrdinalIgnoreCase);
+
+    // Algunos reportes traen filas de título ("Elaborado:", "Responsable:") antes de los encabezados:
+    // se toma como encabezado la primera fila que contenga la columna IDNroServicio.
+    var filaEncabezado = hoja.RowsUsed().Take(20)
+        .FirstOrDefault(r => r.CellsUsed().Any(c => c.GetString().Trim().Equals("IDNroServicio", StringComparison.OrdinalIgnoreCase)))
+        ?? throw new InvalidOperationException("Falta la columna 'IDNroServicio' en las primeras 20 filas.");
+    var encabezado = filaEncabezado.CellsUsed().ToDictionary(c => c.GetString().Trim(), c => c.Address.ColumnNumber, StringComparer.OrdinalIgnoreCase);
 
     int Col(string nombre) => encabezado.TryGetValue(nombre, out var n) ? n : throw new InvalidOperationException($"Falta la columna '{nombre}'.");
     string? Texto(IXLRow r, string nombre) => encabezado.ContainsKey(nombre) ? Normalizar(r.Cell(Col(nombre)).GetString()) : null;
 
     var lista = new List<FilaExcel>();
-    foreach (var r in hoja.RowsUsed().Skip(1))
+    foreach (var r in hoja.RowsUsed(r => r.RowNumber() > filaEncabezado.RowNumber()))
     {
         var nroSum = Normalizar(r.Cell(Col("IDNroServicio")).GetString());
         if (nroSum is null) continue;
